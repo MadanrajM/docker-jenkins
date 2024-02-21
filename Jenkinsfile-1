@@ -1,0 +1,43 @@
+pipeline {
+    agent any
+
+    environment {
+        GIT_REPO_URL          = 'https://github.com/MadanrajM/docker-jenkins-demo.git'
+        GIT_BRANCH            = 'main'
+    }
+
+    stages {
+        stage('Clone Repository') {
+            steps {
+                script {
+                    // Clean workspace before cloning
+                    deleteDir()
+                    
+                    // Clone the Git repository
+                    git branch: GIT_BRANCH, url: GIT_REPO_URL
+                }
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    // Assuming Maven is installed on the Jenkins agent
+                    sh 'mvn clean package'
+                    sh 'docker build -t my-java-app .'
+                }
+            }
+        }
+        
+        stage('Run Docker Image') {
+            steps {
+                script {
+                    // Assuming Maven is installed on the Jenkins agent
+                    sh 'docker run my-java-app'
+                }
+            }
+        }
+
+
+    }
+}

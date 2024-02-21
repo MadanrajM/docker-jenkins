@@ -1,0 +1,71 @@
+pipeline {
+    agent any
+
+    environment {
+        GIT_REPO_URL          = 'https://github.com/MadanrajM/docker-jenkins-demo.git'
+        GIT_BRANCH            = 'main'
+		ECR_REPO = '676546158846.dkr.ecr.us-east-1.amazonaws.com/docker-demo'
+		ECS_TASK_DEFINITION   = 'docker-demo'
+    }
+
+    stages {
+        stage('Clone Repository') {
+            steps {
+                script {
+                    // Clean workspace before cloning
+                    deleteDir()
+                    
+                    // Clone the Git repository
+                    git branch: 'main',
+                        credentialsId: 'github-pat',
+                        url: 'https://github.com/MadanrajM/docker-jenkins-demo.git'
+                }
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    // Assuming Maven is installed on the Jenkins agent
+                    sh '''
+						mvn clean package
+						docker build -t my-java-app:${BUILD_NUMBER} .
+					'''
+                }
+            }
+        }
+        
+        stage('Run Docker Image') {
+            steps {
+                script {
+                    // Assuming Maven is installed on the Jenkins agent
+                    sh 'docker run my-java-app'
+                }
+            }
+        }
+		stage('Push to AWS ECR') {
+            steps {
+                script {
+                    withAWS(credentials: 'aws-creds', region: 'us-east-1') {
+                        sh '''
+							LOGIN_PASSWOD=$(aws ecr get-login-password --region us-east-1)
+							docker login -u AWS -p $LOGIN_PASSWOD $ECR_REPO
+							docker tag my-java-app:${BUILD_NUMBER} $ECR_REPO:${BUILD_NUMBER}
+							docker push $ECR_REPO:${BUILD_NUMBER}
+						'''
+                    }
+                }
+            }
+        }
+		stage('Update ECS Task Definition') {
+				steps {
+					script {
+						 withAWS(credentials: 'aws-creds', region: 'us-east-1') {
+							sh "aws ecs register-task-definition --family $ECS_TASK_DEFINITION --memory 2048 --container-definitions '[{\"name\":\"my-java-app\",\"image\":\"$ECR_REPO:${BUILD_NUMBER}\"}]'"
+						}
+                }
+            }
+        }
+
+    }
+}
