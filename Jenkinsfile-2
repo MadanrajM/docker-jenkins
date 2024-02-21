@@ -2,10 +2,10 @@ pipeline {
     agent any
 
     environment {
-        GIT_REPO_URL          = 'https://github.com/MadanrajM/docker-jenkins-demo.git'
+        GIT_REPO_URL          = 'https://github.com/MadanrajM/docker-jenkins.git'
         GIT_BRANCH            = 'main'
-		ECR_REPO = '676546158846.dkr.ecr.us-east-1.amazonaws.com/docker-demo'
-		ECS_TASK_DEFINITION   = 'docker-demo'
+		ECR_REPO = '676546158846.dkr.ecr.us-east-1.amazonaws.com/docker-demo1'
+		ECS_TASK_DEFINITION   = 'docker-demo1'
     }
 
     stages {
